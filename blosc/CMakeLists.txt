@@ -32,7 +32,7 @@ if(NOT DEACTIVATE_ZLIB)
 endif(NOT DEACTIVATE_ZLIB)
 
 # library sources
-set(SOURCES blosc.c blosclz.c shuffle.c)
+set(SOURCES blosc.h blosc.c blosclz.h blosclz.c shuffle.h shuffle.c)
 # library install directory
 set(lib_dir lib${LIB_SUFFIX})
 set(version_string ${BLOSC_VERSION_MAJOR}.${BLOSC_VERSION_MINOR}.${BLOSC_VERSION_PATCH})
@@ -43,7 +43,7 @@ if(WIN32)
     find_package(Threads)
     if(NOT Threads_FOUND)
         message(STATUS "using the internal pthread library for win32 systems.")
-        set(SOURCES ${SOURCES} win32/pthread.c)
+        set(SOURCES ${SOURCES} win32/pthread.c win32/pthread.h  win32/stdint-windows.h)
     else(NOT Threads_FOUND)
         set(LIBS ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
     endif(NOT Threads_FOUND)
@@ -56,7 +56,7 @@ if(NOT DEACTIVATE_LZ4)
     if(LZ4_FOUND)
         set(LIBS ${LIBS} ${LZ4_LIBRARY})
     else(LZ4_FOUND)
-        file(GLOB LZ4_FILES ${LZ4_LOCAL_DIR}/*.c)
+        file(GLOB LZ4_FILES ${LZ4_LOCAL_DIR}/*.*)
         set(SOURCES ${SOURCES} ${LZ4_FILES})
     endif(LZ4_FOUND)
 endif(NOT DEACTIVATE_LZ4)
@@ -66,6 +66,8 @@ if(NOT DEACTIVATE_SNAPPY)
         set(LIBS ${LIBS} ${SNAPPY_LIBRARY})
     else(SNAPPY_FOUND)
         file(GLOB SNAPPY_FILES ${SNAPPY_LOCAL_DIR}/*.cc)
+        set(SOURCES ${SOURCES} ${SNAPPY_FILES})
+        file(GLOB SNAPPY_FILES ${SNAPPY_LOCAL_DIR}/*.h)
         set(SOURCES ${SOURCES} ${SNAPPY_FILES})
     endif(SNAPPY_FOUND)
 endif(NOT DEACTIVATE_SNAPPY)
@@ -79,32 +81,57 @@ if(NOT DEACTIVATE_ZLIB)
     endif(ZLIB_FOUND)
 endif(NOT DEACTIVATE_ZLIB)
 
+if (MSVC)
+    if (NOT DEFINED ARCH)
+        string(TOLOWER ${MSVC_C_ARCHITECTURE_ID} ARCH)
+    endif()
+
+    # use boost convention - you cant' get the VC compiler without VS
+    if (NOT DEFINED MSVCVER)
+        math(EXPR MSVCVER "(${MSVC_VERSION} / 10) - 60")
+    endif()
+    
+    # add the runtime version and target architecture into the DLL name per MS
+    # guidelines
+    set(MSVC_SHARED_SUFFIX_BASE "${PROJECT_VERSION_MAJOR}-vc${MSVCVER}-mt-${ARCH}")
+    set(CMAKE_SHARED_LIBRARY_SUFFIX "${MSVC_SHARED_SUFFIX_BASE}.dll")
+endif()
 
 # targets
 add_library(blosc_shared SHARED ${SOURCES})
 set_target_properties(blosc_shared PROPERTIES OUTPUT_NAME blosc)
+
+if(MSVC)
+    set_target_properties(blosc_shared PROPERTIES ARCHIVE_OUTPUT_NAME blosc)
+    set_target_properties(blosc_shared PROPERTIES DEFINE_SYMBOL BLOSC_BUILD_DLL)
+endif()
+
 set_target_properties(blosc_shared PROPERTIES
         VERSION ${version_string}
         SOVERSION 1  # Change this when an ABI change happens
     )
-if (MSVC)
-	set_target_properties (blosc_shared PROPERTIES COMPILE_FLAGS -DDLL_EXPORT=TRUE)
-endif(MSVC)
 target_link_libraries(blosc_shared ${LIBS})
 
 if(BUILD_STATIC)
     add_library(blosc_static STATIC ${SOURCES})
+if(MSVC)
+    set_target_properties(blosc_static PROPERTIES OUTPUT_NAME blosc-static)
+else()
     set_target_properties(blosc_static PROPERTIES OUTPUT_NAME blosc)
-	if (MSVC)
-		set_target_properties(blosc_static PROPERTIES PREFIX lib)
-	endif()
+endif()
+
     target_link_libraries(blosc_static ${LIBS})
-endif(BUILD_STATIC)
+endif()
 
 
 # install
 install(FILES blosc.h DESTINATION include COMPONENT DEV)
-install(TARGETS blosc_shared DESTINATION ${lib_dir} COMPONENT LIB)
+#install(TARGETS blosc_shared DESTINATION ${lib_dir} COMPONENT LIB)
+install(TARGETS blosc_shared
+    RUNTIME DESTINATION bin
+    ARCHIVE DESTINATION lib
+    LIBRARY DESTINATION lib )
+
 if(BUILD_STATIC)
     install(TARGETS blosc_static DESTINATION ${lib_dir} COMPONENT DEV)
 endif(BUILD_STATIC)

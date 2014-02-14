@@ -166,6 +166,10 @@ if(WIN32)
     include_directories("${CMAKE_CURRENT_SOURCE_DIR}/blosc")
 endif(WIN32)
 
+if(MSVC)
+  add_definitions(-D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_WARNINGS)
+endif(MSVC)
+
 
 # subdirectories
 add_subdirectory(blosc)
