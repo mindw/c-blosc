@@ -104,8 +104,8 @@ void blosc_set_timestamp(blosc_timestamp_t* timestamp) {
 
 /* Given two timestamp values, return the difference in microseconds. */
 double blosc_elapsed_usecs(blosc_timestamp_t start_time, blosc_timestamp_t end_time) {
-	return (1e6 * (end_time.tv_sec - start_time.tv_sec))
-		+ (1e-3 * (end_time.tv_nsec - start_time.tv_nsec));
+    return (1e6 * (end_time.tv_sec - start_time.tv_sec))
+        + (1e-3 * (end_time.tv_nsec - start_time.tv_nsec));
 }
 
 #endif
@@ -127,8 +127,8 @@ double get_usec_chunk(blosc_timestamp_t last, blosc_timestamp_t current, int nit
 
 int posix_memalign(void **memptr, size_t alignment, size_t size)
 {
-	*memptr = _aligned_malloc(size, alignment);
-	return 0;
+    *memptr = _aligned_malloc(size, alignment);
+    return 0;
 }
 
 /* Buffers allocated with _aligned_malloc need to be freed with _aligned_free. */
@@ -507,7 +507,7 @@ int main(int argc, char *argv[]) {
         for (i = -elsize_; i <= elsize_; i += elsize_) {
           for (size_ = 32*KB; size_ <= size; size_ *= 2) {
             nchunks = get_nchunks(size_+i, workingset);
-    	    niter = 1;
+            niter = 1;
             for (nthreads_ = 1; nthreads_ <= nthreads; nthreads_++) {
               do_bench(compressor, shuffle, nthreads_, size_+i, elsize_, rshift_, output_file);
               blosc_set_timestamp(&current);

@@ -41,9 +41,9 @@
 #pragma once
 #endif
 
-#if _MSC_VER >= 1600 // [
+#if _MSC_VER >= 1600 || defined(__ICL) // [
 #include <stdint.h>
-#else // ] _MSC_VER >= 1600 [
+#else // ] _MSC_VER >= 1600 || defined(__ICL) [
 
 #include <limits.h>
 

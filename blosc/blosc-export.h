@@ -16,7 +16,7 @@
 */
 #if defined(BLOSC_SHARED_LIBRARY)
   #if defined(_MSC_VER)
-    #define BLOSC_EXPORT __declspec(dllexport)
+    #define BLOSC_EXPORT
   #elif (defined(__GNUC__) && __GNUC__ >= 4) || defined(__clang__)
     #if defined(_WIN32) || defined(__CYGWIN__) || defined(__MINGW32__)
       #define BLOSC_EXPORT __attribute__((dllexport))

@@ -2,9 +2,6 @@
 #aux_source_directory(. SOURCES)
 file(GLOB SOURCES test_*.c)
 
-# flags
-link_directories(${PROJECT_BINARY_DIR}/blosc)
-
 # targets and tests
 foreach(source ${SOURCES})
     get_filename_component(target ${source} NAME_WE)
@@ -31,13 +28,13 @@ foreach(source ${SOURCES})
         set_property(
             SOURCE ${source}
             APPEND PROPERTY COMPILE_DEFINITIONS SHUFFLE_SSE2_ENABLED)
-    endif(COMPILER_SUPPORT_SSE2)
+    endif()
 #    if(COMPILER_SUPPORT_AVX2)
 #        # Define a symbol so tests for AVX2 shuffle/unshuffle will be compiled in.
 #        set_property(
 #            SOURCE ${source}
 #            APPEND PROPERTY COMPILE_DEFINITIONS SHUFFLE_AVX2_ENABLED)
-#    endif(COMPILER_SUPPORT_AVX2)
+#    endif()
 
     add_executable(${target} ${source})
 
@@ -47,32 +44,7 @@ foreach(source ${SOURCES})
         TARGET ${target}
         APPEND PROPERTY COMPILE_DEFINITIONS BLOSC_TESTING)
 
-    # have to copy dlls for Visual Studio
-    if(MSVC)
-        if(MSVC_VERSION EQUAL 1500)
-            # This is an attempt to make VS2008 work, but no luck...
-            # https://cmake.org/pipermail/cmake/2014-October/058777.html
-            SET(Configuration "Release")
-        endif()
-        add_custom_command(
-            TARGET      ${target}
-            POST_BUILD
-            COMMAND     ${CMAKE_COMMAND}
-            ARGS        -E copy_if_different
-                        "${PROJECT_BINARY_DIR}/blosc/\$\(Configuration\)/blosc_testing.dll"
-                        "${CMAKE_CURRENT_BINARY_DIR}/\$\(Configuration\)/blosc_testing.dll")
-    elseif(MINGW)
-        add_custom_command(
-            TARGET      ${target}
-            POST_BUILD
-            COMMAND     ${CMAKE_COMMAND}
-            ARGS        -E copy_if_different
-                        "${PROJECT_BINARY_DIR}/blosc/libblosc_testing.dll"
-                        "${CMAKE_CURRENT_BINARY_DIR}/libblosc_testing.dll")
-    endif()
-
-    target_link_libraries(${target} blosc_testing)
-    add_dependencies(${target} blosc_shared_testing)
+    target_link_libraries(${target} blosc_static)
 
     # If there's a CSV file present for this test, read it to get the list
     # of test parameters then add a test for each parameter set.
@@ -111,9 +83,9 @@ foreach(source ${SOURCES})
             set(test_name "${target}_${test_name_params}")
 
             separate_arguments(test_params)
-            add_test(${test_name} ${target} ${test_params})
+            add_test(NAME ${test_name} COMMAND ${target} ${test_params})
         endforeach()
     else()
-        add_test(${target} ${target})
+        add_test(NAME test_${target} COMMAND ${target})
     endif()
-endforeach(source)
+endforeach()

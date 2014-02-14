@@ -63,6 +63,11 @@
 cmake_minimum_required(VERSION 2.8.10)
 project(blosc)
 
+include(CMakeDependentOption)
+include(GNUInstallDirs)
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
 # parse the full version numbers from blosc.h
 file(READ ${CMAKE_CURRENT_SOURCE_DIR}/blosc/blosc.h _blosc_h_contents)
 string(REGEX REPLACE ".*#define[ \t]+BLOSC_VERSION_MAJOR[ \t]+([0-9]+).*"
@@ -76,11 +81,14 @@ string(REGEX REPLACE ".*#define[ \t]+BLOSC_VERSION_STRING[ \t]+\"([-0-9A-Za-z.]+
 
 message("Configuring for Blosc version: " ${BLOSC_VERSION_STRING})
 
+include_directories("${CMAKE_BINARY_DIR}")
+
 # options
 option(BUILD_STATIC
     "Build a static version of the blosc library." ON)
-option(BUILD_TESTS
-    "Build test programs form the blosc compression library" ON)
+CMAKE_DEPENDENT_OPTION(BUILD_TESTS
+    "Build test programs form the blosc compression library" ON
+    "BUILD_STATIC" OFF)
 option(BUILD_BENCHMARKS
     "Build benchmark programs form the blosc compression library" ON)
 option(DEACTIVATE_AVX2
@@ -110,18 +118,18 @@ if(NOT DEACTIVATE_LZ4)
     # HAVE_LZ4 will be set to true because even if the library is
     # not found, we will use the included sources for it
     set(HAVE_LZ4 TRUE)
-endif(NOT DEACTIVATE_LZ4)
+endif()
 
 if(NOT DEACTIVATE_SNAPPY)
     if(PREFER_EXTERNAL_SNAPPY)
         find_package(Snappy)
     else()
         message(STATUS "Using Snappy internal sources.")
-    endif(PREFER_EXTERNAL_SNAPPY)
+    endif()
     # HAVE_SNAPPY will be set to true because even if the library is not found,
     # we will use the included sources for it
     set(HAVE_SNAPPY TRUE)
-endif(NOT DEACTIVATE_SNAPPY)
+endif()
 
 if(NOT DEACTIVATE_ZLIB)
     # import the ZLIB_ROOT environment variable to help finding the zlib library
@@ -130,14 +138,14 @@ if(NOT DEACTIVATE_ZLIB)
         find_package(ZLIB)
         if (NOT ZLIB_FOUND )
             message(STATUS "No zlib found.  Using internal sources.")
-        endif (NOT ZLIB_FOUND )
+        endif ()
     else()
         message(STATUS "Using zlib internal sources.")
-    endif(PREFER_EXTERNAL_ZLIB)
+    endif()
     # HAVE_ZLIB will be set to true because even if the library is not found,
     # we will use the included sources for it
     set(HAVE_ZLIB TRUE)
-endif(NOT DEACTIVATE_ZLIB)
+endif()
 
 # create the config.h file
 configure_file ("blosc/config.h.in"  "blosc/config.h" )
@@ -205,6 +213,10 @@ if(CMAKE_SYSTEM_PROCESSOR STREQUAL i386 OR
         # Unrecognized compiler. Emit a warning message to let the user know hardware-acceleration won't be available.
         message(WARNING "Unable to determine which ${CMAKE_SYSTEM_PROCESSOR} hardware features are supported by the C compiler (${CMAKE_C_COMPILER_ID} ${CMAKE_C_COMPILER_VERSION}).")
     endif()
+    if (CMAKE_SIZEOF_VOID_P MATCHES 4)
+        set(COMPILER_SUPPORT_AVX2 FALSE)
+    endif()
+    
 else()
     # If the target system processor isn't recognized, emit a warning message to alert the user
     # that hardware-acceleration support won't be available but allow configuration to proceed.
@@ -238,6 +250,7 @@ if(MSVC)
     # versions of certain C functions but this is difficult to do
     # in platform-independent code.
     add_definitions( -D_CRT_SECURE_NO_WARNINGS )
+    add_definitions(-D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_WARNINGS)
 endif(MSVC)
 
 if(WIN32)
@@ -245,18 +258,18 @@ if(WIN32)
     include_directories("${CMAKE_CURRENT_SOURCE_DIR}/blosc")
 endif(WIN32)
 
-
 # subdirectories
 add_subdirectory(blosc)
 
 if(BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)
-endif(BUILD_TESTS)
+    set(BUILD_STATIC )
+endif()
 
 if(BUILD_BENCHMARKS)
     add_subdirectory(bench)
-endif(BUILD_BENCHMARKS)
+endif()
 
 
 # uninstall target
@@ -270,7 +283,6 @@ add_custom_target(uninstall
 
 
 # packaging
-include(InstallRequiredSystemLibraries)
 
 set(CPACK_GENERATOR TGZ ZIP)
 set(CPACK_SOURCE_GENERATOR TGZ ZIP)

@@ -1,0 +1,25 @@
+LIBRARY
+EXPORTS
+    blosc_cbuffer_complib
+    blosc_cbuffer_metainfo
+    blosc_cbuffer_sizes
+    blosc_cbuffer_versions
+    blosc_compcode_to_compname
+    blosc_compname_to_compcode
+    blosc_compress
+    blosc_compress_ctx
+    blosc_decompress
+    blosc_decompress_ctx
+    blosc_destroy
+    blosc_free_resources
+    blosc_get_blocksize
+    blosc_get_complib_info
+    blosc_get_compressor
+    blosc_get_nthreads
+    blosc_getitem
+    blosc_init
+    blosc_list_compressors
+    blosc_set_blocksize
+    blosc_set_compressor
+    blosc_set_nthreads
+    

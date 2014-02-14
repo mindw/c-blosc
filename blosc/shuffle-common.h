@@ -24,11 +24,13 @@
 #if defined(_WIN32) && !defined(__MINGW32__)
   #include <windows.h>
   #include "win32/stdint-windows.h"
+  #include "win32/stdbool.h"
 #else
   #include <stdint.h>
   #include <stddef.h>
   #include <inttypes.h>
   #include <string.h>
+  #include <stdbool.h>
 #endif  /* _WIN32 */
 
 #endif  /* SHUFFLE_COMMON_H */
