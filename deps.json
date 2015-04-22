@@ -1,0 +1,8 @@
+{
+    "root" : "j:/dev/opt",
+    "deps" : [
+        "zlib",
+        "snappy",
+        "lz4"
+    ]
+}
